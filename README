@@ -1,0 +1,3 @@
+# sfTestsToXUnitPlugin #
+
+Thi sfTestsToXUnitPlugin adds a new task which runs all unit and functional tests, and formats the output into XUnit format for CruiseControl, phpUnderControl, etc.
