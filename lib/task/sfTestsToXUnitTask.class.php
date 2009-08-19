@@ -17,7 +17,8 @@ class sfTestsToXUnitTask extends sfBaseTask
 		$this->aliases = array('test-to-xunit');
 		
 		$this->addOptions(array(
-			new sfCommandOption('path', null, sfCommandOption::PARAMETER_REQUIRED, 'Path to the output file', sfConfig::get('sf_log_dir') . DIRECTORY_SEPARATOR . 'xunit.xml')
+			new sfCommandOption('path', null, sfCommandOption::PARAMETER_REQUIRED, 'Path to the output file', sfConfig::get('sf_log_dir') . DIRECTORY_SEPARATOR . 'xunit.xml'),
+			new sfCommandOption('phpcli', null, sfCommandOption::PARAMETER_REQUIRED, 'Path to the PHP executable', NULL)
 		));
 
 		$this->namespace = 'test';
