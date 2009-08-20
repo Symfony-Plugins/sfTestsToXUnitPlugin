@@ -12,6 +12,13 @@ class sfTestsToXUnitTest
 	// Constants
 	// ----------------------------------------------------
 	
+	const DOM_TAG_NAME = 'testsuite';
+	const DOM_ATTR_NAME = 'name';
+	const DOM_ATTR_TOTAL_TESTS = 'tests';
+	const DOM_ATTR_TOTAL_FAILURES = 'failures';
+	const DOM_ATTR_TOTAL_ERRORS = 'errors';
+	const DOM_ATTR_EXECUTION_TIME = 'time';
+	
 	const LINE_PREFIX_FAIL = 'not ok';
 	const LINE_PREFIX_INFO = '#';
 	const LINE_PREFIX_PASS = 'ok';
@@ -33,16 +40,22 @@ class sfTestsToXUnitTest
 	private $executionTime;
 	
 	/**
-	 * The raw output of the test file
-	 * @var string
+	 * The output generator of the test
+	 * @var sfTestsToXUnitOutput
 	 */
-	private $rawOutput;
+	private $outputGenerator;
 	
 	/**
 	 * The path to the PHP executable
 	 * @var string
 	 */
 	private $phpcli;
+	
+	/**
+	 * The raw output of the test file
+	 * @var string
+	 */
+	private $rawOutput;
 	
 	/**
 	 * The path to the test file
@@ -86,14 +99,46 @@ class sfTestsToXUnitTest
 	}
 	
 	/**
+	 * Converts the test into a DOMElement and returns it
+	 * 
+	 * @return DOMElement
+	 */
+	public function convertToDOM()
+	{
+		// Create temp DOMDocument so the DOMElement won't be read only
+		$domDocument = &$this->getOutputGenerator()->getDOMDocument();
+		
+		// Create the DOMElement for the test
+		$domElement = $domDocument->createElement(self::DOM_TAG_NAME);
+		$domElement->setAttribute(self::DOM_ATTR_NAME, $this->getName());
+		$domElement->setAttribute(self::DOM_ATTR_TOTAL_TESTS, $this->getTotalTestCases());
+		$domElement->setAttribute(self::DOM_ATTR_TOTAL_FAILURES, $this->getTotalTestCasesFailed());
+		$domElement->setAttribute(self::DOM_ATTR_TOTAL_ERRORS, 0);
+		$domElement->setAttribute(self::DOM_ATTR_EXECUTION_TIME, round($this->getExecutionTime(), 4));
+		
+		// For each test case
+		foreach($this->testCases as $testCase)
+		{
+			// Add it to the DOMElement
+			$domElement->appendChild($testCase->convertToDOM());
+		}
+		
+		// Return
+		return $domElement;
+	}
+	
+	/**
 	 * Runs the test and parses the output
 	 * 
 	 * @param sfTestsToXUnitOutput $outputGenerator The sfTestsToXUnitOutput generator that will format the test results
 	 */
 	public function executeTest(sfTestsToXUnitOutput $outputGenerator)
 	{
+		// Store the generator
+		$this->outputGenerator = $outputGenerator;
+		
 		// Add the test to the output generator
-		$outputGenerator->addTest($this);
+		$this->outputGenerator->addTest($this);
 		
 		// Run the test
 		$this->runTest();
@@ -107,6 +152,46 @@ class sfTestsToXUnitTest
 	public function getExecutionTime()
 	{
 		return $this->executionTime;
+	}
+	
+	/**
+	 * Gets the output generator of the test
+	 * 
+	 * @return sfTestsToXUnitOutput
+	 */
+	public function getOutputGenerator()
+	{
+		return $this->outputGenerator;
+	}
+	
+	/**
+	 * Gets the name of the test
+	 * 
+	 * @return string
+	 */
+	public function getName()
+	{
+		return str_replace('.php', '', basename($this->testFilePath));
+	}
+	
+	/**
+	 * Gets the total number of test cases that failed
+	 * 
+	 * @return integer
+	 */
+	public function getTotalTestCasesFailed()
+	{
+		return $this->testCasesFailed;
+	}
+	
+	/**
+	 * Gets the total number of test cases run
+	 * 
+	 * @return integer
+	 */
+	public function getTotalTestCases()
+	{
+		return count($this->testCases);
 	}
 	
 	// ----------------------------------------------------
@@ -165,12 +250,12 @@ class sfTestsToXUnitTest
 		// If the line designates a passed test
 		if (substr($line, 0, 2) == self::LINE_PREFIX_PASS)
 		{
-			$this->reportPass(sfTestsToXUnitUtil::getTestNumberFromLine($line));
+			$this->reportPass($line);
 		}
 		// If the line designates a failed test
 		else if (substr($line, 0, 6) == self::LINE_PREFIX_FAIL)
 		{
-			$this->reportFail(sfTestsToXUnitUtil::getTestNumberFromLine($line));
+			$this->reportFail($line);
 		}
 		// If the line designates information about a test
 		else if (substr($line, 0, 1) == self::LINE_PREFIX_INFO)
@@ -184,10 +269,14 @@ class sfTestsToXUnitTest
 	 * 
 	 * @param integer $testNumber The test number that has passed
 	 */
-	private function reportPass($testNumber)
+	private function reportPass($line)
 	{
-		// Init the test case
-		$this->initTestCase($testNumber, sfTestsToXUnitTestCase::STATE_PASSED);
+		// Create the test case
+		$this->createTestCase(
+			sfTestsToXUnitUtil::getTestNumberFromLine($line), 
+			sfTestsToXUnitUtil::getTestNameFromLine($line),
+			sfTestsToXUnitTestCase::STATE_PASSED
+		);
 		
 		// Log fail
 		$this->testCasesPassed++;
@@ -198,10 +287,14 @@ class sfTestsToXUnitTest
 	 * 
 	 * @param integer $testNumber The test number that has failed
 	 */
-	private function reportFail($testNumber)
+	private function reportFail($line)
 	{
-		// Init the test case
-		$this->initTestCase($testNumber, sfTestsToXUnitTestCase::STATE_FAILED);
+		// Create the test case
+		$this->createTestCase(
+			sfTestsToXUnitUtil::getTestNumberFromLine($line), 
+			sfTestsToXUnitUtil::getTestNameFromLine($line),
+			sfTestsToXUnitTestCase::STATE_FAILED
+		);
 		
 		// Log fail
 		$this->testCasesFailed++;
@@ -233,9 +326,15 @@ class sfTestsToXUnitTest
 	 * @param integer $testNumber The test number of the test case
 	 * @param integer $state The state of the test case
 	 */
-	private function initTestCase($testNumber, $state)
+	private function createTestCase($testNumber, $name, $state)
 	{
+		// Check if a test case already exists
+		if (array_key_exists($testNumber, $this->testCases) && ($this->testCases[$testNumber] instanceof sfTestsToXUnitTestCase))
+		{
+			return false;
+		}
+		
 		// Create and store the test case
-		$this->testCases[$testNumber] = $this->currentTest = new sfTestsToXUnitTestCase($this, $testNumber, $state);
+		$this->testCases[$testNumber] = $this->currentTest = new sfTestsToXUnitTestCase($this, $testNumber, $name, $state);
 	}
 }

@@ -12,6 +12,11 @@ class sfTestsToXUnitTestCase
 	// Constants
 	// ----------------------------------------------------
 	
+	const DOM_TAG_NAME = 'testcase';
+	const DOM_ATTR_NAME = 'name';
+	const DOM_ATTR_EXECUTION_TIME = 'time';
+	const DOM_FAILURE_TAG_NAME = 'failure';
+	
 	const STATE_FAILED = 0;
 	const STATE_PASSED = 1;
 	
@@ -24,6 +29,12 @@ class sfTestsToXUnitTestCase
 	 * @var string
 	 */
 	private $info;
+	
+	/**
+	 * The name of the test case
+	 * @var string
+	 */
+	private $name;
 	
 	/**
 	 * The state of the test case
@@ -54,11 +65,12 @@ class sfTestsToXUnitTestCase
 	 * @param integer $testNumber The test number of the sfTestsToXUnitTest
 	 * @param string $state The state of the test case
 	 */
-	public function __construct(&$test, $testNumber, $state)
+	public function __construct(&$test, $testNumber, $name, $state)
 	{
 		// Store
 		$this->test = $test;
 		$this->testNumber = $testNumber;
+		$this->name = $name;
 		$this->state = $state;
 	}
 	
@@ -66,7 +78,6 @@ class sfTestsToXUnitTestCase
 	 * Adds information to the test case
 	 * 
 	 * @param string $info Information to add
-	 * @return boolean
 	 */
 	public function addInfo($info)
 	{
@@ -79,9 +90,35 @@ class sfTestsToXUnitTestCase
 		{
 			$this->info .= "\n" . $info;
 		}
+	}
+	
+	/**
+	 * Converts the test case into a DOMElement and returns it
+	 * 
+	 * @return DOMElement
+	 */
+	public function convertToDOM()
+	{
+		// Create temp DOMDocument so the DOMElement won't be read only
+		$domDocument = &$this->getTest()->getOutputGenerator()->getDOMDocument();
+		
+		// Create the DOMElement for the test case
+		$domElement = $domDocument->createElement(self::DOM_TAG_NAME);
+		$domElement->setAttribute(self::DOM_ATTR_NAME, 'Test ' . $this->getTestNumber());
+		$domElement->setAttribute(self::DOM_ATTR_EXECUTION_TIME, round($this->getTest()->getExecutionTime() / $this->getTest()->getTotalTestCases(), 4));
+		
+		// If the test failed and there is info
+		if ($this->getState() == self::STATE_FAILED && $this->getInfo() != NULL)
+		{
+			// Create a failure node
+			$failureNode = $domDocument->createElement(self::DOM_FAILURE_TAG_NAME, $this->getName() . "\n" . $this->getInfo());
+			
+			// Add it to the DOMElement
+			$domElement->appendChild($failureNode);
+		}
 		
 		// Return
-		return true;
+		return $domElement;
 	}
 	
 	/**
@@ -92,6 +129,16 @@ class sfTestsToXUnitTestCase
 	public function getInfo()
 	{
 		return $this->info;
+	}
+	
+	/**
+	 * Gets the name of the test case
+	 * 
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
 	}
 	
 	/**
