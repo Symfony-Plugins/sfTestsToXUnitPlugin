@@ -43,16 +43,12 @@ class sfTestsToXUnitTask extends sfBaseTask
 		$outputGenerator = new sfTestsToXUnitOutput($options['path']);
 		
 		// For each test
-		/*foreach($testFiles as $testFile)
+		foreach($testFiles as $testFile)
 		{
 			// Create a new test
 			$test = new sfTestsToXUnitTest($testFile, $options['phpcli']);
 			$test->executeTest($outputGenerator);
-		}*/
-		
-		// Test test
-		$test = new sfTestsToXUnitTest('D:\Work\MadeByPi\First Direct\Q3\Trunk\Code\Symfony Project\test\unit\DOMDocumentUtilTest.php', $options['phpcli']);
-		$test->executeTest($outputGenerator);
+		}
 		
 		// Output the tests information in XUnit format
 		$outputGenerator->output();

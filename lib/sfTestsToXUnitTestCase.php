@@ -104,7 +104,7 @@ class sfTestsToXUnitTestCase
 		
 		// Create the DOMElement for the test case
 		$domElement = $domDocument->createElement(self::DOM_TAG_NAME);
-		$domElement->setAttribute(self::DOM_ATTR_NAME, 'Test ' . $this->getTestNumber());
+		$domElement->setAttribute(self::DOM_ATTR_NAME, 'Test ' . $this->getTestNumber() . ' - ' . $this->getName());
 		$domElement->setAttribute(self::DOM_ATTR_EXECUTION_TIME, round($this->getTest()->getExecutionTime() / $this->getTest()->getTotalTestCases(), 4));
 		
 		// If the test failed and there is info
