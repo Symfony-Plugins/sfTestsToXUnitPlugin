@@ -111,8 +111,12 @@ class sfTestsToXUnitOutput
 		// For each test
 		foreach($this->tests as $test)
 		{
-			// Add it to the DOMElement
-			$domElement->appendChild($test->convertToDOM());
+			// If the test actually has testcases (adding a testsuite with no tests causes errors in CruiseControl)
+			if ($test->getTotalTestCases() > 0)
+			{
+				// Add it to the DOMElement
+				$domElement->appendChild($test->convertToDOM());
+			}
 		}
 		
 		// Add the DOMElement to the document
