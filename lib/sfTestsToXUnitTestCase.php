@@ -111,7 +111,7 @@ class sfTestsToXUnitTestCase
 		if ($this->getState() == self::STATE_FAILED && $this->getInfo() != NULL)
 		{
 			// Create a failure node
-			$failureNode = $domDocument->createElement(self::DOM_FAILURE_TAG_NAME, $this->getName() . "\n" . $this->getInfo());
+			$failureNode = $domDocument->createElement(self::DOM_FAILURE_TAG_NAME, $this->getInfo());
 			
 			// Add it to the DOMElement
 			$domElement->appendChild($failureNode);
