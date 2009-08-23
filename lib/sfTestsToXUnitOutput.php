@@ -31,6 +31,12 @@ class sfTestsToXUnitOutput
 	private $outputPath;
 	
 	/**
+	 * Determines if a failure should be outputted to the console
+	 * @var boolean
+	 */
+	private $returnFail;
+	
+	/**
 	 * The tests that have been run
 	 * @var array
 	 */
@@ -53,6 +59,7 @@ class sfTestsToXUnitOutput
 		
 		// Init
 		$this->domDocument = new DOMDocument('1.0', 'utf-8');
+		$this->returnFail = false;
 	}
 	
 	/**
@@ -86,6 +93,13 @@ class sfTestsToXUnitOutput
 		
 		// Save it to file
 		$this->saveDOMDocumentToFile($domDocument);
+		
+		// If any tests failed
+		if ($this->returnFail)
+		{
+			// Return a fail for CruiseControl
+			echo '1';
+		}
 	}
 	
 	// ----------------------------------------------------
@@ -116,6 +130,13 @@ class sfTestsToXUnitOutput
 			{
 				// Add it to the DOMElement
 				$domElement->appendChild($test->convertToDOM());
+				
+				// Check if any tests failed
+				if ($test->getTotalTestCasesFailed() > 0)
+				{
+					// Make sure a fail is outputted
+					$this->returnFail = true;
+				}
 			}
 		}
 		
