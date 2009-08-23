@@ -20,7 +20,7 @@ class sfTestsToXUnitTest
 	const DOM_ATTR_EXECUTION_TIME = 'time';
 	
 	const LINE_PREFIX_FAIL = 'not ok';
-	const LINE_PREFIX_INFO = '#';
+	const LINE_PREFIX_INFO = '\#[\s]{4}';
 	const LINE_PREFIX_PASS = 'ok';
 	
 	// ----------------------------------------------------
@@ -248,17 +248,17 @@ class sfTestsToXUnitTest
 	private function parseLine($line)
 	{
 		// If the line designates a passed test
-		if (substr($line, 0, 2) == self::LINE_PREFIX_PASS)
+		if (preg_match("/^".self::LINE_PREFIX_PASS."/i", $line))
 		{
 			$this->reportPass($line);
 		}
 		// If the line designates a failed test
-		else if (substr($line, 0, 6) == self::LINE_PREFIX_FAIL)
+		else if (preg_match("/^".self::LINE_PREFIX_FAIL."/i", $line))
 		{
 			$this->reportFail($line);
 		}
 		// If the line designates information about a test
-		else if (substr($line, 0, 1) == self::LINE_PREFIX_INFO)
+		else if (preg_match("/^".self::LINE_PREFIX_INFO."/i", $line))
 		{
 			$this->reportInfo($line);
 		}
