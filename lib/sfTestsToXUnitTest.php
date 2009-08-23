@@ -34,6 +34,12 @@ class sfTestsToXUnitTest
 	private $currentTest;
 	
 	/**
+	 * Whether an error occurred while running the test
+	 * @var boolean
+	 */
+	private $errorDetected;
+	
+	/**
 	 * The time taken to execute the test
 	 * @var float
 	 */
@@ -113,7 +119,7 @@ class sfTestsToXUnitTest
 		$domElement->setAttribute(self::DOM_ATTR_NAME, $this->getName());
 		$domElement->setAttribute(self::DOM_ATTR_TOTAL_TESTS, $this->getTotalTestCases());
 		$domElement->setAttribute(self::DOM_ATTR_TOTAL_FAILURES, $this->getTotalTestCasesFailed());
-		$domElement->setAttribute(self::DOM_ATTR_TOTAL_ERRORS, 0);
+		$domElement->setAttribute(self::DOM_ATTR_TOTAL_ERRORS, ($this->ifErrorDetected() ? 1 : 0));
 		$domElement->setAttribute(self::DOM_ATTR_EXECUTION_TIME, round($this->getExecutionTime(), 4));
 		
 		// For each test case
@@ -155,16 +161,6 @@ class sfTestsToXUnitTest
 	}
 	
 	/**
-	 * Gets the output generator of the test
-	 * 
-	 * @return sfTestsToXUnitOutput
-	 */
-	public function getOutputGenerator()
-	{
-		return $this->outputGenerator;
-	}
-	
-	/**
 	 * Gets the name of the test
 	 * 
 	 * @return string
@@ -172,6 +168,16 @@ class sfTestsToXUnitTest
 	public function getName()
 	{
 		return str_replace('.php', '', basename($this->testFilePath));
+	}
+	
+	/**
+	 * Gets the output generator of the test
+	 * 
+	 * @return sfTestsToXUnitOutput
+	 */
+	public function getOutputGenerator()
+	{
+		return $this->outputGenerator;
 	}
 	
 	/**
@@ -191,7 +197,24 @@ class sfTestsToXUnitTest
 	 */
 	public function getTotalTestCases()
 	{
-		return count($this->testCases);
+		if (count($this->testCases) < 1 && $this->ifErrorDetected())
+		{
+			return 1;
+		}
+		else
+		{
+			return count($this->testCases);
+		}
+	}
+	
+	/**
+	 * Determines if an error occurred while running the test
+	 * 
+	 * @return boolean
+	 */
+	public function ifErrorDetected()
+	{
+		return $this->errorDetected;
 	}
 	
 	// ----------------------------------------------------
@@ -204,6 +227,7 @@ class sfTestsToXUnitTest
 	private function runTest()
 	{
 		// Init
+		$this->errorDetected = false;
 		$this->testCases = array();
 		$this->testCasesFailed = 0;
 		$this->testCasesPassed = 0;
@@ -237,6 +261,13 @@ class sfTestsToXUnitTest
 		foreach($outputLines as $outputLine)
 		{
 			$this->parseLine(trim($outputLine));
+		}
+		
+		// Check that the test finished successfully
+		if (!preg_match("/Looks like (everything went fine|you failed [0-9]+ tests of [0-9]+)\./i", $this->rawOutput))
+		{
+			// Set that an error occurred if not
+			$this->errorDetected = true;
 		}
 	}
 	

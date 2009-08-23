@@ -132,7 +132,7 @@ class sfTestsToXUnitOutput
 				$domElement->appendChild($test->convertToDOM());
 				
 				// Check if any tests failed
-				if ($test->getTotalTestCasesFailed() > 0)
+				if ($test->getTotalTestCasesFailed() > 0 || $test->ifErrorDetected())
 				{
 					// Make sure a fail is outputted
 					$this->returnFail = true;
