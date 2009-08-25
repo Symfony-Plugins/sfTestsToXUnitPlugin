@@ -136,7 +136,7 @@ class sfTestsToXUnitTest
 		{
 			// Create a dummy test
 			$testCase = new sfTestsToXUnitTestCase($this, 1, 'Execution Error', sfTestsToXUnitTestCase::STATE_FAILED);
-			$testCase->addInfo($this->outputGenerator);
+			$testCase->addInfo($this->rawOutput);
 			
 			// Add it to the DOMElement
 			$domElement->appendChild($testCase->convertToDOM());
