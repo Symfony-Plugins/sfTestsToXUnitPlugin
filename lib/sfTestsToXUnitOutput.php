@@ -98,7 +98,7 @@ class sfTestsToXUnitOutput
 		if ($this->returnFail)
 		{
 			// Return a fail for CruiseControl
-			echo '1';
+			exit(1);
 		}
 	}
 	
