@@ -122,9 +122,22 @@ class sfTestsToXUnitTest
 		$domElement->setAttribute(self::DOM_ATTR_TOTAL_ERRORS, ($this->ifErrorDetected() ? 1 : 0));
 		$domElement->setAttribute(self::DOM_ATTR_EXECUTION_TIME, round($this->getExecutionTime(), 4));
 		
-		// For each test case
-		foreach($this->testCases as $testCase)
+		// If there are tests
+		if (is_array($this->testCases) && count($this->testCases) > 0)
 		{
+			// For each test case
+			foreach($this->testCases as $testCase)
+			{
+				// Add it to the DOMElement
+				$domElement->appendChild($testCase->convertToDOM());
+			}
+		}
+		else
+		{
+			// Create a dummy test
+			$testCase = new sfTestsToXUnitTestCase($this, 1, 'Execution Error', sfTestsToXUnitTestCase::STATE_FAILED);
+			$testCase->addInfo($this->outputGenerator);
+			
 			// Add it to the DOMElement
 			$domElement->appendChild($testCase->convertToDOM());
 		}
